@@ -22,7 +22,7 @@ function searchFriend() {
 
     if (!query) return;
 
-    fetch('https://real-time-chat-application-hvln.onrender.com/api/users/search', {
+    fetch('https://real-time-chat-application-1-cyg7.onrender.com/api/users/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: query })
@@ -51,7 +51,7 @@ function openChat(friendEmail, friendName, friendPic) {
     document.getElementById('chatHeader').innerText = friendName;
     currentFriendEmail = friendEmail;
 
-    fetch(`https://real-time-chat-application-hvln.onrender.com/api/messages/chat?sender=${currentUserEmail}&receiver=${friendEmail}`)
+    fetch(`https://real-time-chat-application-1-cyg7.onrender.com/api/messages/chat?sender=${currentUserEmail}&receiver=${friendEmail}`)
         .then(res => res.json())
         .then(messages => {
             const chatBox = document.getElementById('chatBox');
@@ -77,7 +77,7 @@ function sendMessage() {
     const msg = input.value.trim();
     if (!msg) return;
 
-    fetch("https://real-time-chat-application-hvln.onrender.com/api/messages/send", {
+    fetch("https://real-time-chat-application-1-cyg7.onrender.com/api/messages/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
