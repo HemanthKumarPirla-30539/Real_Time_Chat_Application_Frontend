@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ChatApp - Sign Up</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body, html { margin:0; padding:0; font-family:'Roboto',sans-serif; background:linear-gradient(135deg,#6a11cb,#2575fc,#fc5c7d,#6a82fb); height:100vh; display:flex; justify-content:center; align-items:center; }
+.signup-card { background:rgb(255, 255, 255); border-radius:20px; padding:40px; width:400px; max-width:90%; box-shadow:0 10px 30px rgba(0,0,0,0.3); text-align:center; transition:0.4s; }
+.signup-card h2 { margin-bottom:20px; color:#2575fc; }
+.signup-card input { width:100%; padding:12px; margin:10px 0; border-radius:8px; border:1px solid #ccc; font-size:16px; }
+.signup-card button { padding:12px 25px; margin-top:10px; border:none; border-radius:25px; font-size:16px; background:linear-gradient(45deg,#6a11cb,#2575fc); color:white; cursor:pointer; transition:0.3s; }
+.signup-card button:hover { opacity:0.9; transform: scale(1.02); }
+.step { display:none; opacity:0; transition:0.5s; }
+.step.active { display:block; opacity:1; }
+.login-link { margin-top:15px; display:block; color:#2575fc; cursor:pointer; text-decoration:none; }
+.login-link:hover { text-decoration:underline; }
+.error { color:red; font-size:14px; margin-top:5px; }
+.password-check { text-align:left; font-size:13px; margin-top:5px; }
+.password-check span { display:block; margin:2px 0; }
+.valid { color:green; }
+.invalid { color:red; }
+</style>
+</head>
+<body>
+
+<div class="signup-card">
+    <h2>Create Your Account</h2>
+
+    <!-- Step 1: Email + Password -->
+    <div class="step active" id="step1">
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required onkeyup="checkPasswordStrength()">
+        <div class="password-check" id="passwordCheck">
+            <span id="length" class="invalid">❌ At least 8 characters</span>
+            <span id="upper" class="invalid">❌ One uppercase letter</span>
+            <span id="lower" class="invalid">❌ One lowercase letter</span>
+            <span id="number" class="invalid">❌ One number</span>
+            <span id="special" class="invalid">❌ One special character (!@#$%^&*)</span>
+        </div>
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+        <div class="error" id="errorStep1"></div>
+        <button onclick="requestOtp()">Send OTP</button>
+        <a class="login-link" href="login.html">Already have an account? Login</a>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div class="step" id="stepOtp">
+        <input type="text" id="otp" placeholder="Enter OTP" required>
+        <div class="error" id="errorOtp"></div>
+        <button onclick="verifyOtp()">Verify OTP</button>
+    </div>
+
+    <!-- Step 3: Username + Profile Pic -->
+    <div class="step" id="step2">
+        <input type="text" id="username" placeholder="Your Name" required>
+        <input type="file" id="profilePic" accept="image/*">
+        <div class="error" id="errorStep2"></div>
+        <button onclick="finishSignup()">Sign Up</button>
+    </div>
+</div>
+
+<script>
+let tempEmail = null;
+let tempPassword = null;
+
+// Password Strength Checker
+function checkPasswordStrength() {
+    const pass = document.getElementById('password').value;
+
+    const lengthEl = document.getElementById('length');
+    lengthEl.className = pass.length >= 8 ? 'valid' : 'invalid';
+    lengthEl.innerText = (pass.length >= 8 ? '✅' : '❌') + ' At least 8 characters';
+
+    const upperEl = document.getElementById('upper');
+    upperEl.className = /[A-Z]/.test(pass) ? 'valid' : 'invalid';
+    upperEl.innerText = (/[A-Z]/.test(pass) ? '✅' : '❌') + ' One uppercase letter';
+
+    const lowerEl = document.getElementById('lower');
+    lowerEl.className = /[a-z]/.test(pass) ? 'valid' : 'invalid';
+    lowerEl.innerText = (/[a-z]/.test(pass) ? '✅' : '❌') + ' One lowercase letter';
+
+    const numberEl = document.getElementById('number');
+    numberEl.className = /[0-9]/.test(pass) ? 'valid' : 'invalid';
+    numberEl.innerText = (/[0-9]/.test(pass) ? '✅' : '❌') + ' One number';
+
+    const specialEl = document.getElementById('special');
+    specialEl.className = /[!@#$%^&*]/.test(pass) ? 'valid' : 'invalid';
+    specialEl.innerText = (/[!@#$%^&*]/.test(pass) ? '✅' : '❌') + ' One special character (!@#$%^&*)';
+}
+
+
+// Step 1: Send OTP
+function requestOtp() {
+    const email = document.getElementById('email').value.trim();
+    const pass = document.getElementById('password').value.trim();
+    const confirm = document.getElementById('confirmPassword').value.trim();
+    const error = document.getElementById('errorStep1');
+    error.innerText = '';
+
+    if (!email || !pass || !confirm) { 
+        error.innerText = 'All fields required!'; 
+        return;
+    }
+    if (pass !== confirm) { 
+        error.innerText = 'Passwords do not match!'; 
+        return;
+    }
+    if (document.querySelectorAll('.valid').length !== 5) { 
+        error.innerText = 'Password not strong enough!'; 
+        return;
+    }
+
+   fetch('https://real-time-chat-application-hvln.onrender.com/api/users/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password: pass })
+})
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            tempEmail = email;
+            tempPassword = pass;
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('stepOtp').classList.add('active');
+            alert("Please check your email, we sent OTP!");
+        } else {
+            error.innerText = data.message; // shows "Email already exists!" in red
+        }
+    }).catch(err => error.innerText = 'Server error!');
+}
+
+
+// Step 2: Verify OTP
+function verifyOtp() {
+    const otp = document.getElementById('otp').value.trim();
+    const error = document.getElementById('errorOtp');
+    error.innerText = '';
+    if (!otp) { error.innerText = 'Enter OTP!'; return; }
+
+    fetch('https://real-time-chat-application-hvln.onrender.com/api/users/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: tempEmail, otp: otp })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            localStorage.setItem('email', tempEmail);
+            localStorage.setItem('username', 'User');
+            localStorage.setItem('profilePic', 'default.png');
+            document.getElementById('stepOtp').classList.remove('active');
+            document.getElementById('step2').classList.add('active');
+        } else {
+            error.innerText = data.message;
+        }
+    }).catch(err => error.innerText = 'Server error!');
+}
+
+
+// Step 3: Finish Signup
+function finishSignup() {
+    const username = document.getElementById('username').value.trim();
+    const file = document.getElementById('profilePic').files[0];
+    const error = document.getElementById('errorStep2'); error.innerText = '';
+    if (!username) { error.innerText = 'Enter your name!'; return; }
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onloadend = function() {
+            const base64 = reader.result;
+            saveUser(username, base64);
+        }
+        reader.readAsDataURL(file);
+    } else {
+        saveUser(username, null);
+    }
+}
+
+
+function saveUser(username, profilePic) {
+    const email = localStorage.getItem('email');
+    if (!email) { document.getElementById('errorStep2').innerText = 'Email not found!'; return; }
+
+    fetch('https://real-time-chat-application-hvln.onrender.com/api/users/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username, profilePic })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            localStorage.setItem('username', username);
+            localStorage.setItem('profilePic', profilePic || '');
+            window.location.href = 'dashboard.html';
+        } else {
+            document.getElementById('errorStep2').innerText = data.message;
+        }
+    }).catch(err => document.getElementById('errorStep2').innerText = 'Server error!');
+}
+</script>
+</body>
+</html>

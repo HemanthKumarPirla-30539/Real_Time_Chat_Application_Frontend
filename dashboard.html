@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ChatApp — Dashboard (Voice → Text)</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sidebar-width: 300px;
+    --accent: #2575fc;
+  }
+  html,body{height:100%;margin:0;font-family:Roboto,Arial,Helvetica,sans-serif;background:#f2f4f7;}
+  .app { display:flex; height:100vh; width:100%; box-sizing:border-box; }
+
+  /* LEFT SIDEBAR */
+  .sidebar {
+    width:var(--sidebar-width);
+    min-width:var(--sidebar-width);
+    background:#fff;
+    border-right:1px solid #e6e9ef;
+    padding:18px;
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .profile { text-align:center; }
+  .profile img { width:92px; height:92px; object-fit:cover; border-radius:50%; display:block; margin:0 auto 8px; border:3px solid #f0f2f6; }
+  .profile h3 { margin:6px 0 0; font-size:18px; }
+  .profile p { margin:4px 0 0; color:#666; font-size:13px; }
+
+  .sidebar .btn-row { display:flex; gap:8px; margin-top:12px; }
+  .sidebar button { flex:1; padding:8px 10px; border:none; border-radius:8px; cursor:pointer; background:linear-gradient(90deg,var(--accent), #4a90f2); color:#fff; font-weight:600; }
+
+  .search { margin-top:12px; }
+  .search input { width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; }
+
+  .friends {
+    margin-top:10px;
+    flex:1; overflow-y:auto;
+  }
+  .friend-item {
+    display:flex; align-items:center; gap:10px; padding:10px; border-radius:8px; cursor:pointer;
+    transition:background .12s;
+  }
+  .friend-item:hover { background:#f7f9ff; }
+  .friend-item img { width:40px; height:40px; border-radius:50%; object-fit:cover; }
+  .friend-meta { display:flex; flex-direction:column; }
+  .friend-meta .name { font-weight:600; }
+  .friend-meta .email { font-size:12px; color:#777; margin-top:2px; }
+  .friend-item.active { background:#e6f0ff; border-left:4px solid var(--accent); }
+
+  /* CHAT AREA: middle -> right (full remaining width) */
+  .chat-wrap { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .chat-header {
+    display:flex; align-items:center; gap:12px; padding:14px 18px;
+    background:linear-gradient(90deg,var(--accent), #3b82f6); color:white;
+    box-shadow:0 1px 0 rgba(0,0,0,0.04);
+  }
+  .chat-header img { width:44px;height:44px;border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.12); }
+  .chat-header .title { font-weight:700; font-size:16px; }
+  .chat-header .subtitle { font-size:12px; color:rgba(255,255,255,0.9); }
+
+  .chat-main { display:flex; flex-direction:column; flex:1; overflow:hidden; background: #f6f8fb; }
+  .messages { flex:1; padding:18px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+  .bubble { max-width:70%; padding:10px 14px; border-radius:14px; word-break:break-word; }
+  .bubble.self { align-self:flex-end; background:var(--accent); color:white; border-bottom-right-radius:6px; }
+  .bubble.other { align-self:flex-start; background:#fff; color:#111; border:1px solid #e6e9ef; border-bottom-left-radius:6px; }
+  .timestamp { font-size:11px; color:#888; margin-top:4px; opacity:0.9; }
+
+  .chat-input { display:flex; gap:8px; align-items:center; padding:12px; background:white; border-top:1px solid #e6e9ef; }
+  .chat-input textarea { flex:1; resize:none; min-height:46px; max-height:140px; padding:10px 12px; border-radius:12px; border:1px solid #ddd; outline:none; font-size:15px; }
+  .chat-controls { display:flex; gap:8px; align-items:center; }
+  .mic-btn, .send-btn {
+    height:46px; min-width:46px; padding:0 12px; border-radius:12px; border:none; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+    background:linear-gradient(90deg,#fff,#fff); box-shadow:none; font-size:18px;
+  }
+  .mic-btn { background:transparent; border:1px solid var(--accent); color:var(--accent); }
+  .mic-btn.listening { background:var(--accent); color:white; border-color:var(--accent); }
+  .send-btn { background:var(--accent); color:white; border:none; font-weight:700; padding:0 16px; border-radius:10px; }
+
+  @media (max-width:720px){ .sidebar { display:block; } }
+  @media (max-width:720px){.send-btn{font-size:12px;}}
+  @media (max-width:720px){.mic-btn{font-size:12px;}}
+</style>
+</head>
+<body>
+  <div id="profileCard" style="
+  display:none;
+  position:fixed;
+  top:50%; left:50%;
+  transform:translate(-50%, -50%);
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  width:300px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  text-align:center;
+  z-index:9999;
+">
+  <img id="profileCardPic" src="default.png" style="width:90px;height:90px;border-radius:50%;object-fit:cover;margin-bottom:12px;">
+  <h2 id="profileCardName" style="margin:0;"></h2>
+  <p id="profileCardEmail" style="margin:6px 0;color:#555;"></p>
+
+  <button onclick="closeProfileCard()" style="
+    margin-top:10px;
+    padding:8px 14px;
+    border:none;
+    border-radius:8px;
+    background:#2575fc;
+    color:white;
+    cursor:pointer;
+  ">Close</button>
+</div>
+
+<div class="app">
+  <!-- LEFT -->
+  <aside class="sidebar">
+    <div class="profile">
+      <img id="sideProfilePic" src="default.png" alt="profile">
+      <h3 id="sideUsername">User</h3>
+      <p id="sideEmail">email@example.com</p>
+    </div>
+    <div class="btn-row">
+      <button type="button" onclick="viewProfile()">View</button>
+      <button type="button" onclick="updateProfile()">Update</button>
+    </div>
+    <div class="search">
+      <input id="friendSearch" placeholder="Search friends by name or email" oninput="onSearchInput()" />
+    </div>
+    <div class="friends" id="friendsContainer"></div>
+  </aside>
+
+  <!-- CHAT -->
+  <section class="chat-wrap" aria-label="Chat area">
+    <header class="chat-header" id="chatHeader">
+      <img id="chatFriendPic" src="https://via.placeholder.com/44" alt="">
+      <div>
+        <div class="title" id="chatFriendName">Select a friend</div>
+        <div class="subtitle" id="chatFriendEmail">Open a chat to start messaging</div>
+      </div>
+    </header>
+
+    <div class="chat-main">
+      <div class="messages" id="messagesList"></div>
+      <div class="chat-input">
+        <textarea id="messageBox" placeholder="Type a message or press mic..." rows="1" disabled></textarea>
+        <div class="chat-controls">
+          <button id="micBtn" class="mic-btn" title="Voice to text">🎤</button>
+          <button id="sendBtn" class="send-btn" disabled>Send</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  
+const API_BASE = 'https://real-time-chat-application-hvln.onrender.com/api';
+
+let loggedEmail = localStorage.getItem('email') || null;
+let loggedUsername = localStorage.getItem('username') || 'User';
+let loggedProfilePic = localStorage.getItem('profilePic') || 'default.png';
+
+const friendsContainer = document.getElementById('friendsContainer');
+const friendSearch = document.getElementById('friendSearch');
+const messagesList = document.getElementById('messagesList');
+const messageBox = document.getElementById('messageBox');
+const sendBtn = document.getElementById('sendBtn');
+const micBtn = document.getElementById('micBtn');
+
+let currentFriend = null;
+let recognition = null;
+let listening = false;
+sendBtn.addEventListener("click",sendMessage);
+
+/* ---------- INIT ---------- */
+window.addEventListener('load', () => {
+  document.getElementById('sideUsername').textContent = loggedUsername;
+  document.getElementById('sideEmail').textContent = loggedEmail || '';
+  document.getElementById('sideProfilePic').src = loggedProfilePic || 'default.png';
+  const saved = localStorage.getItem('currentChat');
+  if(saved) try{ openChat(JSON.parse(saved)); } catch(e){ loadFriendList(); } else loadFriendList();
+  setupSpeechRecognition();
+});
+
+/* ---------- FRIEND LIST / SEARCH ---------- */
+function onSearchInput(){
+  const q = friendSearch.value.trim();
+  if(!q){ friendsContainer.innerHTML = ''; return; }
+  fetch(`${API_BASE}/users/search`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({query:q})
+  }).then(r=>r.json()).then(list=>renderFriendList(list)).catch(console.error);
+}
+
+function loadFriendList(){
+  fetch(`${API_BASE}/users/search`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({query:''})
+  })
+  .then(r=>r.json())
+  .then(list => renderFriendList(list.filter(u=>u.email!==loggedEmail)))
+  .catch(console.error);
+}
+
+function renderFriendList(list){
+  friendsContainer.innerHTML = '';
+  list.forEach(u=>{
+    const div = document.createElement('div');
+    div.className='friend-item';
+    div.innerHTML=`
+      <img src="${u.profilePic || 'default.png'}" alt="pf">
+      <div class="friend-meta">
+        <div class="name">${u.username || '(no name)'}</div>
+        <div class="email">${u.email}</div>
+      </div>
+    `;
+    div.addEventListener('click',()=>openChat(u,true));
+    friendsContainer.appendChild(div);
+  });
+}
+
+/* ---------- OPEN CHAT ---------- */
+function openChat(userObj, pin=true){
+  if(!userObj?.email) return;
+  currentFriend = { email:userObj.email, username:userObj.username||userObj.email, profilePic:userObj.profilePic||'default.png' };
+  document.getElementById('chatFriendName').textContent=currentFriend.username;
+  document.getElementById('chatFriendEmail').textContent=currentFriend.email;
+  document.getElementById('chatFriendPic').src=currentFriend.profilePic;
+  messageBox.disabled=false; sendBtn.disabled=false; micBtn.disabled=false; messageBox.focus();
+  localStorage.setItem('currentChat', JSON.stringify(currentFriend));
+  if(pin) pinFriendInSidebar(currentFriend.email);
+
+  // Highlight active friend
+  document.querySelectorAll('.friend-item.active').forEach(el=>el.classList.remove('active'));
+  const items = Array.from(friendsContainer.querySelectorAll('.friend-item'));
+  const currItem = items.find(it=>it.querySelector('.email')?.textContent===currentFriend.email);
+  if(currItem) currItem.classList.add('active');
+
+  loadMessages(loggedEmail, currentFriend.email);
+}
+
+/* ---------- PIN FRIEND ---------- */
+function pinFriendInSidebar(email){
+  const items = Array.from(friendsContainer.querySelectorAll('.friend-item'));
+  const existing = items.find(it=>it.querySelector('.email')?.textContent===email);
+
+  if(existing) friendsContainer.prepend(existing);
+  else if(currentFriend){
+    const div=document.createElement('div');
+    div.className='friend-item';
+    div.innerHTML=`
+      <img src="${currentFriend.profilePic}" alt="pf">
+      <div class="friend-meta">
+        <div class="name">${currentFriend.username}</div>
+        <div class="email">${currentFriend.email}</div>
+      </div>`;
+    div.addEventListener('click',()=>openChat(currentFriend,true));
+    friendsContainer.prepend(div);
+  }
+}
+
+/* ---------- MESSAGES ---------- */
+function loadMessages(u1,u2){
+  messagesList.innerHTML='<div style="color:#777; padding:10px;">Loading messages...</div>';
+  fetch(`${API_BASE}/messages/load?user1=${encodeURIComponent(u1)}&user2=${encodeURIComponent(u2)}`)
+    .then(r=>r.json())
+    .then(msgs=>{
+      messagesList.innerHTML='';
+      if(!Array.isArray(msgs)||msgs.length===0){ messagesList.innerHTML='<div style="color:#777; padding:10px;">No messages yet. Say hello 👋</div>'; return; }
+      msgs.forEach(appendMessageToDOM);
+      messagesList.scrollTop=messagesList.scrollHeight;
+    }).catch(err=>{ console.error(err); messagesList.innerHTML='<div style="color:#777; padding:10px;">Failed to load messages</div>'; });
+}
+
+function appendMessageToDOM(msg){
+  const div=document.createElement('div');
+  const isSelf=msg.sender===loggedEmail;
+  div.className='bubble '+(isSelf?'self':'other');
+  div.textContent=msg.text;
+  const ts=document.createElement('div');
+  ts.className='timestamp';
+  try{ const d=new Date(msg.timestamp||msg.createdAt||msg.time); ts.textContent=isNaN(d)?'':d.toLocaleString(); }catch(e){ ts.textContent=''; }
+  const wrapper=document.createElement('div'); wrapper.style.display='flex'; wrapper.style.flexDirection='column';
+  wrapper.appendChild(div); wrapper.appendChild(ts);
+  messagesList.appendChild(wrapper);
+}
+
+/* ---------- SEND MESSAGE ---------- */
+function sendMessage(){
+  const text=messageBox.value.trim();
+  if(!text||!currentFriend) return;
+  const payload={sender:loggedEmail,receiver:currentFriend.email,text};
+  sendBtn.disabled=true;
+  fetch(`${API_BASE}/messages/send`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+  }).then(r=>r.json()).then(res=>{
+    messageBox.value=''; loadMessages(loggedEmail,currentFriend.email);
+  }).catch(err=>{ console.error(err); alert('Failed to send message'); })
+    .finally(()=>sendBtn.disabled=false);
+}
+
+messageBox.addEventListener('keydown', e=>{
+  if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMessage(); }
+});
+
+/* ---------- VOICE ---------- */
+function setupSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    micBtn.disabled = true;
+    micBtn.title = 'Speech recognition not supported';
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    listening = true;
+    micBtn.classList.add('listening');
+    micBtn.textContent = '🎙️ Listening...';
+  };
+
+  recognition.onend = () => {
+    listening = false;
+    micBtn.classList.remove('listening');
+    micBtn.textContent = '🎤';
+  };
+
+  recognition.onerror = (ev) => {
+    console.error('Speech recognition error:', ev.error);
+    alert('Error: ' + ev.error);
+    listening = false;
+    micBtn.classList.remove('listening');
+    micBtn.textContent = '🎤';
+  };
+
+  recognition.onresult = (ev) => {
+    const transcript = ev.results[0][0].transcript;
+    messageBox.value = messageBox.value ? messageBox.value + ' ' + transcript : transcript;
+    messageBox.focus();
+  };
+
+  micBtn.addEventListener('click', () => {
+    if (!currentFriend) {
+      alert('Open a chat first');
+      return;
+    }
+    try {
+      if (listening) recognition.stop();
+      else recognition.start();
+    } catch (e) {
+      console.error(e);
+    }
+  });
+}
+
+
+/* ---------- PROFILE ---------- */
+function viewProfile() {
+  document.getElementById("profileCardPic").src = loggedProfilePic;
+  document.getElementById("profileCardName").textContent = loggedUsername;
+  document.getElementById("profileCardEmail").textContent = loggedEmail;
+
+  document.getElementById("profileCard").style.display = "block";
+}
+
+function closeProfileCard() {
+  document.getElementById("profileCard").style.display = "none";
+}
+function updateProfile(){
+  const fileInput=document.createElement('input'); fileInput.type='file'; fileInput.accept='image/*';
+  fileInput.onchange=()=>{
+    const file=fileInput.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onloadend=async ()=>{
+      const base64=reader.result;
+      try{
+        const res=await fetch(`${API_BASE}/users/updateProfile`, {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email:loggedEmail,profilePic:base64})
+        });
+        const j=await res.json();
+        if(j.status==='success'){
+          loggedProfilePic=base64;
+          localStorage.setItem('profilePic',base64);
+          document.getElementById('sideProfilePic').src=base64;
+          alert('Profile updated');
+        }else alert(j.message||'Failed to update');
+      }catch(e){ console.error(e); alert('Server error'); }
+    };
+    reader.readAsDataURL(file);
+  };
+  fileInput.click();
+}
+</script>
+</body>
+</html>

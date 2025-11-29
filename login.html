@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ChatApp - Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body, html {
+    margin:0; padding:0; font-family:'Roboto',sans-serif;
+    height:100vh; display:flex; justify-content:center; align-items:center;
+    background: linear-gradient(135deg,#6a11cb,#2575fc,#fc5c7d,#6a82fb);
+}
+.login-card {
+    background:white; border-radius:20px; padding:40px; width:400px; max-width:90%;
+    box-shadow:0 10px 30px rgba(0,0,0,0.3); text-align:center;
+}
+.login-card h2 { margin-bottom:20px; color:#2575fc; }
+.login-card input { width:100%; padding:12px; margin:10px 0; border-radius:8px; border:1px solid #ccc; font-size:16px; }
+.login-card button {
+    padding:12px 25px; margin-top:10px; border:none; border-radius:25px; font-size:16px;
+    background:linear-gradient(45deg,#6a11cb,#2575fc); color:white; cursor:pointer; transition:0.3s;
+}
+.login-card button:hover { opacity:0.9; }
+.signup-link { margin-top:15px; display:block; color:#2575fc; cursor:pointer; text-decoration:none; }
+.signup-link:hover { text-decoration:underline; }
+.error { color:red; font-size:14px; margin-top:5px; }
+</style>
+</head>
+<body>
+
+<div class="login-card">
+    <h2>Login to Link UP</h2>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <div class="error" id="errorMsg"></div>
+    <button onclick="login()">Login</button>
+    <a class="signup-link" href="signup.html">Don't have an account? Sign up</a>
+</div>
+
+<script>
+function login(){
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const error = document.getElementById('errorMsg');
+    error.innerText = '';
+
+    if(!email || !password){
+        error.innerText = 'All fields are required';
+        return;
+    }
+
+    fetch('https://real-time-chat-application-hvln.onrender.com/api/users/login',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email,password})
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.message === "Login successful"){
+            // Save user info
+            localStorage.setItem('username', data.username);
+            localStorage.setItem('profilePic', data.profilePic);
+            localStorage.setItem('email', data.email);
+
+            // redirect
+            window.location.href = 'dashboard.html';
+        } else {
+            error.innerText = data.message || 'Login failed';
+        }
+    })
+    .catch(err=>{
+        error.innerText = 'Server error or invalid credentials';
+        console.error(err);
+    });
+}
+</script>
+
+</body>
+</html>

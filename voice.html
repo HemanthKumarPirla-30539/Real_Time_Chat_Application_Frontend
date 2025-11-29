@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Chat Input</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+    }
+    .chat-box {
+      display: flex;
+      align-items: center;
+      background: white;
+      padding: 10px;
+      border-radius: 25px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+      width: 300px;
+    }
+    input {
+      flex: 1;
+      border: none;
+      outline: none;
+      padding: 8px;
+      font-size: 16px;
+    }
+    button {
+      background: #25D366; /* WhatsApp green */
+      border: none;
+      color: white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="chat-box">
+    <input type="text" id="message" placeholder="Speak or type a message..." />
+    <button id="mic"><i>🎤</i></button>
+  </div>
+
+  <script>
+    const micBtn = document.getElementById("mic");
+    const messageBox = document.getElementById("message");
+
+    // Check if SpeechRecognition API is available
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech Recognition not supported in this browser!");
+    } else {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.lang = "en-US";
+
+      micBtn.addEventListener("click", () => {
+        recognition.start();
+        micBtn.style.background = "#128C7E"; // change color while recording
+      });
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        messageBox.value = transcript; // print words in message box
+        micBtn.style.background = "#25D366";
+      };
+
+      recognition.onerror = (e) => {
+        console.error("Speech recognition error:", e);
+        micBtn.style.background = "#25D366";
+      };
+    }
+  </script>
+
+</body>
+</html>

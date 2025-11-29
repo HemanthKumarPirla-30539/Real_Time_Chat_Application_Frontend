@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ChatApp - Meet Your Friends</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body, html { margin:0; padding:0; font-family:'Roboto',sans-serif; scroll-behavior:smooth; }
+* { box-sizing: border-box; }
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 50px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 80px; /* Add fixed height */
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(5px);
+    z-index: 10000; /* higher z-index to stay on top */
+}
+
+
+nav h1 { color: white; font-size: 28px; }
+nav .nav-buttons { display: flex; gap: 15px; }
+nav .nav-buttons button {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: bold;
+    background: linear-gradient(45deg,#6a11cb,#2575fc);
+    color: white;
+}
+nav .nav-buttons button:hover { opacity: 0.85; }
+
+/* Hero Section */
+.hero {
+    padding-top: 80px; /* same as nav height */
+    height: calc(100vh - 80px); /* ensure full screen minus nav */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(135deg,#6a11cb,#2575fc,#fc5c7d,#6a82fb);
+    color:white;
+}
+
+.hero h2 { font-size:50px; margin-bottom:20px; text-shadow:2px 2px 8px rgba(0,0,0,0.4);}
+.hero p { font-size:22px; margin-bottom:30px; text-shadow:1px 1px 5px rgba(0,0,0,0.4);}
+.hero button {
+    padding:15px 35px; font-size:18px; border:none; border-radius:30px;
+    background:linear-gradient(45deg,#fc5c7d,#6a82fb); cursor:pointer;
+}
+.hero button:hover { opacity:0.9; }
+
+/* About Section */
+section { padding:100px 50px; background:white; text-align:center; }
+section h3 { font-size:32px; margin-bottom:20px; color:#2575fc; }
+section p { font-size:18px; margin-bottom:15px; }
+section a { margin:0 15px; color:#2575fc; font-weight:bold; text-decoration:none; }
+section a:hover { text-decoration:underline; }
+
+/* Footer */
+footer { background:#333; color:white; padding:20px; text-align:center; }
+</style>
+</head>
+<body>
+
+<nav>
+    <h1>LINK UP</h1>
+    <div class="nav-buttons">
+        <button onclick="window.location.href='signup.html'">Sign Up</button>
+        <button onclick="window.location.href='login.html'">Login</button>
+    </div>
+</nav>
+
+<div class="hero">
+    <h2>Meet Your Friends Here!</h2>
+    <p>Connect instantly. Chat smoothly. Share freely.</p>
+    <button onclick="window.location.href='signup.html'">Get Started</button>
+</div>
+
+<section>
+    <h3>About Me</h3>
+    <p>Welcome to ChatApp, the place to meet friends and chat in real time.</p>
+    <p>Follow me on:</p>
+    <a href="https://github.com/HemanthKumarPirla-30539" target="_blank">GitHub</a>
+    <a href="http://www.linkedin.com/in/p-hemanth-kumar-97579528b" target="_blank">LinkedIn</a>
+</section>
+
+<footer>
+    &copy; 2025 ChatApp. All rights reserved.
+</footer>
+
+</body>
+</html>
